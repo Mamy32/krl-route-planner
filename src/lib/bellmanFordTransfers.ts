@@ -28,14 +28,17 @@ export function bellmanFordTransfers(
 ) {
   const stationCount = 94;
 
-  const dist =
-    Array(stationCount).fill(Infinity);
+  const dist = Array(stationCount).fill(
+    Infinity
+  );
 
-  const prev =
-    Array(stationCount).fill(null);
+  const prev = Array(stationCount).fill(
+    null
+  );
 
-  const prevLine =
-    Array(stationCount).fill(null);
+  const prevLine = Array(
+    stationCount
+  ).fill(null);
 
   dist[start] = 0;
 
@@ -55,14 +58,13 @@ export function bellmanFordTransfers(
           ? 100
           : 0;
 
-      if (
-        dist[u] + 1 + penaltyUV <
-        dist[v]
-      ) {
-        dist[v] =
-          dist[u] +
-          1 +
-          penaltyUV;
+      const costUV =
+        dist[u] +
+        penaltyUV +
+        0.01;
+
+      if (costUV < dist[v]) {
+        dist[v] = costUV;
 
         prev[v] = u;
 
@@ -75,14 +77,13 @@ export function bellmanFordTransfers(
           ? 100
           : 0;
 
-      if (
-        dist[v] + 1 + penaltyVU <
-        dist[u]
-      ) {
-        dist[u] =
-          dist[v] +
-          1 +
-          penaltyVU;
+      const costVU =
+        dist[v] +
+        penaltyVU +
+        0.01;
+
+      if (costVU < dist[u]) {
+        dist[u] = costVU;
 
         prev[u] = v;
 
@@ -91,51 +92,51 @@ export function bellmanFordTransfers(
     }
   }
 
- const path: number[] = [];
+  const path: number[] = [];
 
-let current: number | null =
-  end;
+  let current: number | null =
+    end;
 
-while (current !== null) {
-  path.unshift(current);
-  current = prev[current];
-}
-
-const transferStations: string[] = [];
-
-let currentLine: string | null =
-  null;
-
-for (
-  let i = 0;
-  i < path.length - 1;
-  i++
-) {
-  const line = getLine(
-    path[i],
-    path[i + 1]
-  );
-
-  if (
-    currentLine &&
-    currentLine !== line
-  ) {
-transferStations.push(
-  STATIONS[path[i]]
-);
+  while (current !== null) {
+    path.unshift(current);
+    current = prev[current];
   }
 
-  currentLine = line;
-}
+  const transferStations: string[] = [];
 
-return {
-  path,
-  totalTime:
-    path.length - 1,
+  let currentLine: string | null =
+    null;
 
-  transfers:
-    transferStations.length,
+  for (
+    let i = 0;
+    i < path.length - 1;
+    i++
+  ) {
+    const line = getLine(
+      path[i],
+      path[i + 1]
+    );
 
-  transferStations,
-};
+    if (
+      currentLine &&
+      currentLine !== line
+    ) {
+      transferStations.push(
+        STATIONS[path[i]]
+      );
+    }
+
+    currentLine = line;
+  }
+
+  return {
+    path,
+
+    totalTime: null,
+
+    transfers:
+      transferStations.length,
+
+    transferStations,
+  };
 }

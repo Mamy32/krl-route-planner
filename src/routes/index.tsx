@@ -17,6 +17,8 @@ import { dijkstraTransfers }
 from "@/lib/dijkstraTransfers";
 import { bellmanFordTransfers }
 from "@/lib/bellmanFordTransfers";
+import { calculateFare }
+from "@/lib/fare";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -251,9 +253,15 @@ setRouteResult({
     "totalDistance" in result
       ? result.totalDistance
       : undefined,
-
+  fare:
+  "totalDistance" in result
+    ? calculateFare(
+        result.totalDistance
+      )
+    : null,
   runtime,
   optimization,
+
 
   transfers:
     "transfers" in result

@@ -91,10 +91,10 @@ export function dijkstraTransfers(
           ? 100
           : 0;
 
-      const alt =
-        dist[current] +
-        1 +
-        transferPenalty;
+const alt =
+  dist[current] +
+  transferPenalty +
+  0.01;
 
       if (alt < dist[neighbor]) {
         dist[neighbor] = alt;
@@ -141,7 +141,7 @@ for (let i = 0; i < path.length - 1; i++) {
 
 return {
   path,
-  totalTime: path.length - 1,
+  totalTime: null,
   transfers: transferStations.length,
   transferStations,
 };
