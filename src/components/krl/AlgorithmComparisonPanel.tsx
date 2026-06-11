@@ -64,15 +64,28 @@ export function AlgorithmComparisonPanel({
     );
   }
 
- const winner =
+const winner =
   comparisonData.dijkstra.runtime <
   comparisonData.bellman.runtime
     ? "Dijkstra"
     : "Bellman-Ford";
 
+const runtimeDifference = Math.abs(
+  comparisonData.dijkstra.runtime -
+  comparisonData.bellman.runtime
+).toFixed(2);
+
 const isShortest =
   comparisonData.optimization ===
   "shortest";
+
+const sameDistance =
+  comparisonData.dijkstra.totalDistance ===
+  comparisonData.bellman.totalDistance;
+
+const sameStations =
+  comparisonData.dijkstra.stations ===
+  comparisonData.bellman.stations;
 
   return (
     <Card className="shadow-md border-border/60">
@@ -85,17 +98,19 @@ const isShortest =
 
       <CardContent>
 
-        <div className="mb-4 rounded-md border border-yellow-200 bg-yellow-50 p-3">
-          <div className="flex items-center gap-2">
-            <Trophy className="w-4 h-4 text-yellow-600" />
+<div className="mb-4 rounded-md border border-yellow-200 bg-yellow-50 p-3">
+  <div className="flex items-center gap-2">
+    <Trophy className="w-4 h-4 text-yellow-600" />
 
-<span className="text-sm font-semibold text-yellow-800">
-  {isShortest
-    ? "Both algorithms found the same shortest route"
-    : `Faster Algorithm: ${winner}`}
-</span>
-          </div>
-        </div>
+    <span className="text-sm font-semibold text-yellow-800">
+      {isShortest
+        ? sameDistance && sameStations
+          ? `${winner} was faster, but both algorithms found the same shortest route`
+          : `${winner} found a different shortest route`
+        : `Faster Algorithm: ${winner}`}
+    </span>
+  </div>
+</div>
 
         <Table>
           <TableHeader>
@@ -133,6 +148,15 @@ const isShortest =
                 )} ms
               </TableCell>
             </TableRow>
+            <TableRow>
+  <TableCell className="font-medium">
+    Faster By
+  </TableCell>
+
+  <TableCell colSpan={2}>
+    {winner} is faster by {runtimeDifference} ms
+  </TableCell>
+</TableRow>
 
 {isShortest ? (
   <TableRow>

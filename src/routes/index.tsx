@@ -34,6 +34,8 @@ function Index() {
   const [destination, setDestination] = useState("");
   const [optimization, setOptimization] = useState("fastest");
   const [pickupStation, setPickupStation] = useState("");
+  const [waypoints, setWaypoints] =
+  useState<string[]>([]);
 const [routeResult, setRouteResult] =
   useState<any>(null);
 const [comparisonData, setComparisonData] =
@@ -41,7 +43,72 @@ const [comparisonData, setComparisonData] =
 const [performanceData, setPerformanceData] =
   useState<any[]>([]);
 
-  const handleFindRoute = () => {
+  function combineMultipleStops(
+  stops: number[],
+  algo: (
+    from: number,
+    to: number
+  ) => any
+) {
+  let fullPath: number[] = [];
+
+  let totalTime = 0;
+
+  let totalDistance = 0;
+
+  let transfers = 0;
+
+  let transferStations: string[] = [];
+
+  for (
+    let i = 0;
+    i < stops.length - 1;
+    i++
+  ) {
+    const leg =
+      algo(
+        stops[i],
+        stops[i + 1]
+      );
+
+    if (i === 0) {
+      fullPath.push(...leg.path);
+    } else {
+      fullPath.push(
+        ...leg.path.slice(1)
+      );
+    }
+
+    totalTime +=
+      leg.totalTime || 0;
+
+    totalDistance +=
+      leg.totalDistance || 0;
+
+    transfers +=
+      leg.transfers || 0;
+
+    transferStations.push(
+      ...(leg.transferStations || [])
+    );
+  }
+
+  return {
+    path: fullPath,
+    totalTime,
+    totalDistance,
+    transfers,
+    transferStations,
+  };
+}
+const benchmarkRoutes = [
+  [0, 5],
+  [0, 15],
+  [0, 30],
+  [0, 50],
+  [0, 66],
+];
+const handleFindRoute = () => {
 
   if (!origin || !destination) return;
 
@@ -50,50 +117,60 @@ const [performanceData, setPerformanceData] =
   const pickup = pickupStation
   ? getStationId(pickupStation)
   : null;
-function combineRoute(
-  algo: (from:number,to:number)=>any
-) {
+  const stops = [
+  start,
 
-  if (
-    pickup !== null &&
-    pickup !== start &&
-    pickup !== end
-  ) {
+  ...(pickup !== null
+    ? [pickup]
+    : []),
 
-    const first: any =
-      algo(start, pickup);
+  ...waypoints.map(
+    getStationId
+  ),
 
-    const second: any =
-      algo(pickup, end);
+  end,
+];
+function runBenchmark() {
+  const results = [];
 
-    return {
-      path: [
-        ...first.path,
-        ...second.path.slice(1),
-      ],
+  for (const [start, end] of benchmarkRoutes) {
 
-      totalTime:
-        (first.totalTime || 0) +
-        (second.totalTime || 0),
+    const dStart = performance.now();
 
-      totalDistance:
-        (first.totalDistance || 0) +
-        (second.totalDistance || 0),
+    const dResult =
+      optimization === "shortest"
+        ? dijkstraDistance(start, end)
+        : optimization === "transfers"
+        ? dijkstraTransfers(start, end)
+        : dijkstra(start, end);
 
-      transfers:
-        (first.transfers || 0) +
-        (second.transfers || 0),
+    const dRuntime =
+      performance.now() - dStart;
 
-      transferStations: [
-        ...(first.transferStations || []),
-        ...(second.transferStations || []),
-      ],
+    const bStart = performance.now();
 
-      pickupStation,
-    };
+    const bResult =
+      optimization === "shortest"
+        ? bellmanFordDistance(start, end)
+        : optimization === "transfers"
+        ? bellmanFordTransfers(start, end)
+        : bellmanFord(start, end);
+
+    const bRuntime =
+      performance.now() - bStart;
+
+    results.push({
+      stations: dResult.path.length,
+      dijkstra: Number(
+        dRuntime.toFixed(2)
+      ),
+      bellman: Number(
+        bRuntime.toFixed(2)
+      ),
+    });
   }
 
-  return algo(start, end);
+  return results;
 }
 function runSelectedAlgorithm(
   from: number,
@@ -122,13 +199,16 @@ function runSelectedAlgorithm(
   const dijkstraStart =
   performance.now();
 
-const dijkstraResult = combineRoute(
-  optimization === "shortest"
-    ? dijkstraDistance
-    : optimization === "transfers"
-    ? dijkstraTransfers
-    : dijkstra
-);
+const dijkstraResult =
+  combineMultipleStops(
+    stops,
+    optimization === "shortest"
+      ? dijkstraDistance
+      : optimization === "transfers"
+      ? dijkstraTransfers
+      : dijkstra
+  );
+
 
 const dijkstraRuntime =
   performance.now() -
@@ -137,37 +217,30 @@ const dijkstraRuntime =
 const bellmanStart =
   performance.now();
 
-const bellmanResult = combineRoute(
-  optimization === "shortest"
-    ? bellmanFordDistance
-    : optimization === "transfers"
-    ? bellmanFordTransfers
-    : bellmanFord
-);
-
+const bellmanResult =
+  combineMultipleStops(
+    stops,
+    optimization === "shortest"
+      ? bellmanFordDistance
+      : optimization === "transfers"
+      ? bellmanFordTransfers
+      : bellmanFord
+  );
 const bellmanRuntime =
   performance.now() -
   bellmanStart;
 
-const result = combineRoute(
-  runSelectedAlgorithm
-);
-
+const result =
+  combineMultipleStops(
+    stops,
+    runSelectedAlgorithm
+  );
 
 const runtime = performance.now() - startTime;
 
-setPerformanceData((prev) => [
-  ...prev,
-  {
-    stations: result.path.length,
-    dijkstra: Number(
-      dijkstraRuntime.toFixed(2)
-    ),
-    bellman: Number(
-      bellmanRuntime.toFixed(2)
-    ),
-  },
-]);
+setPerformanceData(
+  runBenchmark()
+);
 setRouteResult({
   ...result,
 
@@ -268,17 +341,19 @@ setComparisonData({
       <main className="max-w-[1600px] mx-auto px-4 sm:px-6 py-6 space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-3 animate-fade-in">
-          <RouteSearchPanel
-            origin={origin}
-            destination={destination}
-            pickupStation={pickupStation}
-            optimization={optimization}
-            onOriginChange={setOrigin}
-            onDestinationChange={setDestination}
-            onPickupStationChange={setPickupStation}
-            onOptimizationChange={setOptimization}
-            onFindRoute={handleFindRoute}
-          />
+        <RouteSearchPanel
+          origin={origin}
+          destination={destination}
+          pickupStation={pickupStation}
+          waypoints={waypoints}
+          optimization={optimization}
+          onOriginChange={setOrigin}
+          onDestinationChange={setDestination}
+          onPickupStationChange={setPickupStation}
+          onWaypointsChange={setWaypoints}
+          onOptimizationChange={setOptimization}
+          onFindRoute={handleFindRoute}
+        />
           </div>
 
 <div className="lg:col-span-6 animate-fade-in">

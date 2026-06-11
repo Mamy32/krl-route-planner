@@ -24,12 +24,16 @@ export function PerformanceChart({
 }: Props) {
   return (
     <Card className="shadow-md border-border/60">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <Activity className="w-5 h-5 text-primary" />
-          Algorithm Performance
-        </CardTitle>
-      </CardHeader>
+<CardHeader className="pb-3">
+  <CardTitle className="flex items-center gap-2 text-lg">
+    <Activity className="w-5 h-5 text-primary" />
+    Algorithm Scalability Benchmark
+  </CardTitle>
+
+  <p className="text-sm text-muted-foreground">
+    Runtime comparison as route size increases
+  </p>
+</CardHeader>
 
       <CardContent>
         <div
@@ -81,14 +85,16 @@ export function PerformanceChart({
                 }}
               />
 
-              <Tooltip
-                contentStyle={{
-                  borderRadius: 8,
-                  border:
-                    "1px solid hsl(var(--border))",
-                  fontSize: 12,
-                }}
-              />
+<Tooltip
+  formatter={(value) => {
+    const runtime = Number(value);
+
+    return [
+      `${runtime.toFixed(2)} ms`,
+      "",
+    ];
+  }}
+/>
 
               <Legend
                 wrapperStyle={{
@@ -121,8 +127,8 @@ export function PerformanceChart({
 
         {data.length === 0 && (
           <p className="text-center text-sm text-muted-foreground mt-4">
-            Run a route search to generate
-            performance benchmarks.
+          Run a route search to generate
+algorithm scalability benchmarks.
           </p>
         )}
       </CardContent>

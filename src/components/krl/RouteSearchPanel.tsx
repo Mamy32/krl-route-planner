@@ -9,6 +9,11 @@ type Props = {
   origin: string;
   destination: string;
   pickupStation: string;
+  waypoints: string[];
+
+onWaypointsChange: (
+  v: string[]
+) => void;
 
   optimization: string;
 
@@ -57,6 +62,33 @@ export function RouteSearchPanel(p: Props) {
   <Label className="text-sm font-medium">
     Friend Pickup Station (Optional)
   </Label>
+  <div className="space-y-2">
+  <Label className="text-sm font-medium">
+    Visit Station (Optional)
+  </Label>
+
+  <Select
+    value={p.waypoints[0] || ""}
+    onValueChange={(v) =>
+      p.onWaypointsChange([v])
+    }
+  >
+    <SelectTrigger>
+      <SelectValue placeholder="Select station to visit" />
+    </SelectTrigger>
+
+    <SelectContent>
+      {STATION_LIST.map((s) => (
+        <SelectItem
+          key={s.id}
+          value={s.name}
+        >
+          {s.name}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+</div>
 
   <Select
     value={p.pickupStation}
